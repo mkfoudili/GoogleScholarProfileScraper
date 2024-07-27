@@ -1,27 +1,59 @@
-from bs4 import BeautifulSoup as bs
-import requests as req
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import random
 
+def wait():
+    time.sleep(random(1, 5))
 
-def getProfile(query, headers, proxies):
+def getProfiles(query,proxy):
     try:
+        options = Options()
+        options.headless = True
+        if proxy:
+            options.add_argument(f'--proxy-server={proxy}')
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+
         url = f"https://scholar.google.com/citations?hl=en&view_op=search_authors&mauthors={query}"
-        response = req.get(url, proxies=proxies, headers=headers)
-        soup = bs(response.content, 'html.parser')
         
+        wait()
+
+        driver.get(url)
+
+        wait()
+
         scholar_profiles = []
-        for el in soup.select('.gsc_1usr'):
-            profile = {
-                'name': el.select_one('.gs_ai_name').get_text(),
-                'name_link': 'https://scholar.google.com' + el.select_one('.gs_ai_name a')['href'],
-                'position': el.select_one('.gs_ai_aff').get_text(),
-                'email': el.select_one('.gs_ai_eml').get_text(),
-                'departments': el.select_one('.gs_ai_int').get_text(),
-                'cited_by_count': el.select_one('.gs_ai_cby').get_text().split(' ')[2]
-            }
-            scholar_profiles.append({k: v for k, v in profile.items() if v})
+        elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
+        for el in elements:
+            try:
+                name_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_name')
+                name_link_element = name_element.find_element(By.TAG_NAME, 'a')
+                position_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_aff')
+                email_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_eml')
+                departments_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_int')
+                cited_by_count_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_cby')
+                
+                profile = {
+                    'name': name_element.text,
+                    'name_link': 'https://scholar.google.com' + name_link_element.get_attribute('href'),
+                    'position': position_element.text,
+                    'email': email_element.text,
+                    'departments': departments_element.text,
+                    'cited_by_count': cited_by_count_element.text.split(' ')[2]
+                }
+
+                scholar_profiles.append({k: v for k, v in profile.items() if v})
+            except Exception as e:
+                print(e)
         
         print(scholar_profiles)
+        driver.quit()
     except Exception as e:
         print(e)
 
-getScholarProfiles()
+getProfiles("ESI",{})
