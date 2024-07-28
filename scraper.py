@@ -9,52 +9,21 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import random
 
-def wait():
-    time.sleep(random.randint(3, 10))
+def waitRandom():
+    time.sleep(random.randint(3, 5))
 
-def getProfiles(query,proxy):
-    try:
-        q = formatQuery(query)
-        options = Options()
-        # options.add_argument('--headless=True')
-        if proxy:
-            options.add_argument(f'--proxy-server={proxy}')
+def setUpWebDriver(proxy):
+    options = Options()
+    # options.add_argument('--headless=True')
+    if proxy:
+        options.add_argument(f'--proxy-server={proxy}')
 
+    service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=options)
 
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
-
-        url = f"https://scholar.google.com/citations?hl=en&view_op=search_authors&mauthors={query}"
-        
-        wait()
-
-        driver.get(url)
-
-        wait()
-
-        scholar_profiles = []
-        elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
-        extractData(elements,scholar_profiles)
-
-        print(scholar_profiles)
-
-        while True:
-            try:
-                pagination_button = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.gs_btnPR.gs_btn_half.gs_btn_lsb'))
-                )
-                pagination_button.click()
-                wait()
-                elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
-                extractData(elements, scholar_profiles)
-                print("\n"+str(scholar_profiles))
-            except Exception as e:
-                print(e)
-                break
-
-        driver.quit()
-    except Exception as e:
-        print(e)
+def getProfileURL(query):
+    formatQuery(query)
+    return f"https://scholar.google.com/citations?hl=en&view_op=search_authors&mauthors={query}"
 
 def extractData(elements,scholar_profiles):
     for el in elements:
@@ -77,6 +46,38 @@ def extractData(elements,scholar_profiles):
                 }
                 scholar_profiles.append({k: v for k, v in profile.items() if v})
             except Exception as e:
-                print(e)
+                print(f"Error extracting data : {e}")
 
-getProfiles("kouider",{})
+def getProfiles(query,proxy):
+    try:
+        url = getProfileURL(query)
+        driver = setUpWebDriver(proxy)
+        driver.get(url)
+
+        waitRandom()
+
+        scholar_profiles = []
+        elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
+        extractData(elements,scholar_profiles)
+
+        print(scholar_profiles)
+
+        while True:
+            try:
+                pagination_button = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.gs_btnPR.gs_btn_half.gs_btn_lsb'))
+                )
+                pagination_button.click()
+                waitRandom()
+                elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
+                extractData(elements, scholar_profiles)
+                print("\n"+str(scholar_profiles))
+            except Exception as e:
+                print(f"Error or Final page : {e}")
+                break
+
+        driver.quit()
+    except Exception as e:
+        print(f"Error fetching the profile : {e}")
+
+getProfiles("basil altaie",{})
