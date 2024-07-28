@@ -1,3 +1,4 @@
+from validator import formatQuery
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -13,6 +14,7 @@ def wait():
 
 def getProfiles(query,proxy):
     try:
+        q = formatQuery(query)
         options = Options()
         # options.add_argument('--headless=True')
         if proxy:
@@ -45,8 +47,9 @@ def getProfiles(query,proxy):
                 wait()
                 elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
                 extractData(elements, scholar_profiles)
-                print("\n"+scholar_profiles)
+                print("\n"+str(scholar_profiles))
             except Exception as e:
+                print(e)
                 break
 
         driver.quit()
@@ -63,17 +66,17 @@ def extractData(elements,scholar_profiles):
                 departments_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_int')
                 cited_by_count_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_cby')
                 
-                profile = {
-                    'name': name_element.text,
-                    'name_link': 'https://scholar.google.com' + name_link_element.get_attribute('href'),
-                    'position': position_element.text,
-                    'email': email_element.text,
-                    'departments': departments_element.text,
-                    'cited_by_count': cited_by_count_element.text.split(' ')[2]
-                }
 
+                profile = {
+                    'name': name_element.text if name_element else '',
+                    'name_link': 'https://scholar.google.com' + name_link_element.get_attribute('href') if name_link_element else '',
+                    'position': position_element.text if position_element else '',
+                    'email': email_element.text if email_element else '',
+                    'departments': departments_element.text if departments_element else '',
+                    'cited_by_count': cited_by_count_element.text.split(' ')[2] if (len(cited_by_count_element.text.split(' ')) > 2) else '0'
+                }
                 scholar_profiles.append({k: v for k, v in profile.items() if v})
             except Exception as e:
                 print(e)
 
-getProfiles("louiza",{})
+getProfiles("kouider",{})
