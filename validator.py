@@ -1,7 +1,7 @@
 def formatQuery(query): 
+    # url encode instead
     if isinstance(query, str):
-        query = query.replace(" ", "+")
-        return True
+        query = query.strip()
+        return query.replace(' ', '+')
     else:
-        return False
-    
+        return query

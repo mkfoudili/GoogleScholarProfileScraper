@@ -1,4 +1,5 @@
 from validator import formatQuery
+from db_manager import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -6,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from fake_useragent import UserAgent
 import time
 import random
 
@@ -14,7 +16,8 @@ def waitRandom():
 
 def setUpWebDriver(proxy):
     options = Options()
-    # options.add_argument('--headless=True')
+    options.add_argument('--headless=True')
+    options.add_argument(f'--user-agent='{str(UserAgent.random)}'')
     if proxy:
         options.add_argument(f'--proxy-server={proxy}')
 
@@ -22,10 +25,10 @@ def setUpWebDriver(proxy):
     return webdriver.Chrome(service=service, options=options)
 
 def getProfileURL(query):
-    formatQuery(query)
-    return f"https://scholar.google.com/citations?hl=en&view_op=search_authors&mauthors={query}"
+    formatted_query = formatQuery(query)
+    return f'https://scholar.google.com/citations?hl=en&view_op=search_authors&mauthors={formatted_query}'
 
-def extractData(elements,scholar_profiles):
+def extractData(elements,profiles):
     for el in elements:
             try:
                 name_element = el.find_element(By.CSS_SELECTOR, '.gs_ai_name')
@@ -44,9 +47,9 @@ def extractData(elements,scholar_profiles):
                     'departments': departments_element.text if departments_element else '',
                     'cited_by_count': cited_by_count_element.text.split(' ')[2] if (len(cited_by_count_element.text.split(' ')) > 2) else '0'
                 }
-                scholar_profiles.append({k: v for k, v in profile.items() if v})
+                profiles.append({k: v for k, v in profile.items() if v})
             except Exception as e:
-                print(f"Error extracting data : {e}")
+                print(f'Error extracting data : {e}')
 
 def getProfiles(query,proxy):
     try:
@@ -56,11 +59,11 @@ def getProfiles(query,proxy):
 
         waitRandom()
 
-        scholar_profiles = []
+        profiles = []
         elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
-        extractData(elements,scholar_profiles)
+        extractData(elements,profiles)
 
-        print(scholar_profiles)
+        print(profiles)
 
         while True:
             try:
@@ -70,14 +73,20 @@ def getProfiles(query,proxy):
                 pagination_button.click()
                 waitRandom()
                 elements = driver.find_elements(By.CSS_SELECTOR, '.gsc_1usr')
-                extractData(elements, scholar_profiles)
-                print("\n"+str(scholar_profiles))
+                extractData(elements, profiles)
+                print('\n'+str(profiles))
             except Exception as e:
-                print(f"Error or Final page : {e}")
+                print(f'Error or Final page : {e}')
                 break
 
         driver.quit()
+        return profiles
     except Exception as e:
-        print(f"Error fetching the profile : {e}")
+        print(f'Error fetching the profile : {e}')
+        return []
 
-getProfiles("basil altaie",{})
+profiles = getProfiles('djawida',{})
+con = connectDataBase('scholar_profiles.sqlite3')
+createTable(con)
+insertProfiles(con,profiles)
+con.close()
