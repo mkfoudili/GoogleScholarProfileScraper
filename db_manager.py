@@ -5,7 +5,7 @@ def connectDataBase(db_file):
         con = sqlite3.connect(db_file)
     except sqlite3.Error as e:
         con = None
-        print(f"Error connecting to {db_file} : {e}")
+        print(f'Error connecting to {db_file} : {e}')
     return con
 
 def createTable(con):
@@ -25,7 +25,7 @@ def createTable(con):
         cur.execute(create_table_sql)
         con.commit()
     except sqlite3.Error as e:
-        print(f"Error creating table : {e}")
+        print(f'Error creating table : {e}')
 
 
 def insertProfile(con,profile):
@@ -37,9 +37,9 @@ def insertProfile(con,profile):
         cur = con.cursor()
         cur.execute(insert_profile_sql,(profile['name'],profile['name_link'],profile['position'],profile['email'],profile['departments'],profile['cited_by_count']))
         con.commit()
-        print(f"Inserted profile: {profile['name']}")
+        print(f'Inserted profile: {profile['name']}')
     except sqlite3.Error as e:
-        print(f"Error inserting profile : {e}")
+        print(f'Error inserting profile : {e}')
 
 def insertProfiles(con,profiles):
     for profile in profiles:

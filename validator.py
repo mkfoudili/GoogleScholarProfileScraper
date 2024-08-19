@@ -1,7 +1,7 @@
+from urllib.parse import quote_plus
+
 def formatQuery(query): 
-    # url encode instead
     if isinstance(query, str):
-        query = query.strip()
-        return query.replace(' ', '+')
+        return quote_plus(query)
     else:
-        return query
+        raise ValueError

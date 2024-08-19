@@ -1,5 +1,5 @@
-from validator import formatQuery
-from db_manager import *
+import time
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -8,8 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from fake_useragent import UserAgent
-import time
-import random
+from validator import formatQuery
 
 def waitRandom():
     time.sleep(random.randint(3, 5))
@@ -17,7 +16,7 @@ def waitRandom():
 def setUpWebDriver(proxy):
     options = Options()
     options.add_argument('--headless=True')
-    options.add_argument(f'--user-agent='{str(UserAgent.random)}'')
+    options.add_argument(f'--user-agent={str(UserAgent.random)}')
     if proxy:
         options.add_argument(f'--proxy-server={proxy}')
 
@@ -85,8 +84,3 @@ def getProfiles(query,proxy):
         print(f'Error fetching the profile : {e}')
         return []
 
-profiles = getProfiles('djawida',{})
-con = connectDataBase('scholar_profiles.sqlite3')
-createTable(con)
-insertProfiles(con,profiles)
-con.close()
